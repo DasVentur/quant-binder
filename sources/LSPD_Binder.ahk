@@ -1,5 +1,8 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+#UseHook
+InstallKeybdHook()
+InstallMouseHook()
 SendMode "Input"
 SetWorkingDir A_ScriptDir
 
