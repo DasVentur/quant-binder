@@ -3,29 +3,39 @@ name: Auto Release
 on:
   push:
     branches:
-      - main # Скрипт спрацьовує при кожному пуші в гілку main
+      - main # Спрацьовує при кожному пуші в main
+
+permissions:
+  contents: write # Обов'язково для створення релізів
 
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Для простого копіювання файлу убунту підійде ідеально
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Тут йдуть ваші кроки для збірки (build) програми, наприклад:
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      # - name: Install dependencies
-      #   run: npm install
-      # - name: Build exe
-      #   run: npm run build
-
-      - name: Оновлення Release
-        uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: latest
+          fetch-depth: 0 # Потрібно для підрахунку версій
+
+      # 1. Автоматичний підрахунок наступної версії (v1.0.1, v1.0.2 і т.д.)
+      - name: Розрахунок версії
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch
+          with_v: true
+
+      # 2. Створення релізу та завантаження чистого .exe файлу
+      - name: Створення релізу
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: |
+            Автоматичний реліз програми.
+            Зміни додано в комміті: ${{ github.sha }}
+          draft: false
           prerelease: false
-          title: "Оновлена версія"
           files: |
-            ./LSPD_Binder.exe # Вкажіть шлях до вашого exe файлу у проєкті
+            ${{ github.workspace }}/LSPD_Binder.exe
