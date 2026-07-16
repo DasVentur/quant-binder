@@ -5,27 +5,43 @@ on:
     branches:
       - main # Скрипт спрацьовує при кожному пуші в гілку main
 
+permissions:
+  contents: write # Даємо права на створення релізів та тегів
+
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest # Windows потрібен, якщо ваш exe збирається суто під Windows
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Тут йдуть ваші кроки для збірки (build) програми, наприклад:
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      # - name: Install dependencies
-      #   run: npm install
-      # - name: Build exe
-      #   run: npm run build
-
-      - name: Оновлення Release
-        uses: marvinpinto/action-automatic-releases@latest
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: latest
+          fetch-depth: 0 # Потрібно для правильного підрахунку тегів
+
+      # ==========================================
+      # ТУТ ПОВИНЕН БУТИ ВАШ КРОК ЗБІРКИ EXE ФАЙЛУ
+      # (Наприклад, PyInstaller, Electron-builder або dotnet publish)
+      # Переконайтеся, що файл після збірки називається LSPD_Binder.exe
+      # ==========================================
+
+      # 1. Автоматичний підрахунок наступної версії (v1.0.1, v1.0.2 і т.д.)
+      - name: Розрахунок версії
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch # Кожен пуш автоматично збільшує останню цифру (наприклад, з 1.0.1 на 1.0.2)
+          with_v: true # Додає літеру "v" перед цифрою (v1.0.2)
+
+      # 2. Створення самого релізу в GitHub та завантаження чистого .exe файлу
+      - name: Створення релізу
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: |
+            Автоматичний реліз програми.
+            Зміни додано в комміті: ${{ github.sha }}
+          draft: false
           prerelease: false
-          title: "Оновлена версія"
           files: |
-            ./LSPD_Binder.exe # Вкажіть шлях до вашого exe файлу у проєкті
+            LSPD_Binder.exe # Вкажіть точний шлях до вашого exe-файлу у репозиторії після збірки
