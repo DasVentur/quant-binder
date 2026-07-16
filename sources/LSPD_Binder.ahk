@@ -1,5 +1,11 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+
+if not A_IsAdmin {
+    try Run '*RunAs "' A_ScriptFullPath '"'
+    ExitApp
+}
+
 #UseHook
 InstallKeybdHook()
 InstallMouseHook()
